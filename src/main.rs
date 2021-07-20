@@ -1,5 +1,3 @@
-use lazy_static::lazy_static;
-use regex::Regex;
 use serde::Deserialize;
 use std::env;
 use std::error::Error;
@@ -14,7 +12,7 @@ struct Record {
     #[serde(rename = "Full Account Name")]
     account: String,
     #[serde(rename = "Amount Num")]
-    amount: String,
+    amount: f64,
 }
 
 fn main() {
@@ -32,12 +30,11 @@ fn run() -> Result<(), Box<dyn Error>> {
         if let (Some(date), Some(description)) = (record.date, record.description) {
             println!("\n{} {}", date, description);
         }
-        let amount = amount_to_cents(&record.amount).unwrap();
         println!(
-            "    {}    ${}.{}",
+            "    {}    ${:01}.{:02}",
             record.account,
-            amount / 100,
-            (amount % 100).abs()
+            record.amount.trunc(),
+            (record.amount.fract() * 100.0).trunc().abs(),
         );
     }
     Ok(())
@@ -50,21 +47,4 @@ fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
         None => Err(From::from("expected 1 argument, but got none")),
         Some(file_path) => Ok(file_path),
     }
-}
-
-fn amount_to_cents(amount: &str) -> Option<i32> {
-    lazy_static! {
-        // Matches signed integers and decimals of up to 2 places
-        static ref RE: Regex = Regex::new(r"^(-)?(\d+)(?:.(\d{1,2}))?$").unwrap();
-    }
-    let caps = RE.captures(amount)?;
-    let sign = if caps.get(1).is_none() { 1 } else { -1 };
-    // If match exists then parse should always succeed
-    let integer = caps.get(2)?.as_str().parse::<i32>().unwrap();
-    let decimal = caps
-        .get(3)
-        // If match exists then parse should always succeed
-        .map(|x| x.as_str().parse::<i32>().unwrap())
-        .unwrap_or(0);
-    Some(sign * (100 * integer + decimal))
 }
