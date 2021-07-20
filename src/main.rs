@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 use std::env;
 use std::error::Error;
 use std::ffi::OsString;
@@ -12,7 +12,8 @@ struct Record {
     #[serde(rename = "Full Account Name")]
     account: String,
     #[serde(rename = "Amount Num")]
-    amount: f64,
+    #[serde(deserialize_with = "amount_to_cents")]
+    cents: i32,
 }
 
 fn main() {
@@ -31,10 +32,10 @@ fn run() -> Result<(), Box<dyn Error>> {
             println!("\n{} {}", date, description);
         }
         println!(
-            "    {}    ${:01}.{:02}",
+            "    {}    ${}.{:02}",
             record.account,
-            record.amount.trunc(),
-            (record.amount.fract() * 100.0).trunc().abs(),
+            record.cents / 100,
+            (record.cents % 100).abs(),
         );
     }
     Ok(())
@@ -47,4 +48,9 @@ fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
         None => Err(From::from("expected 1 argument, but got none")),
         Some(file_path) => Ok(file_path),
     }
+}
+
+fn amount_to_cents<'de, D: Deserializer<'de>>(deserializer: D) -> Result<i32, D::Error> {
+    let amount: f64 = Deserialize::deserialize(deserializer)?;
+    Ok((amount * 100.0) as i32)
 }
