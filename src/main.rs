@@ -52,5 +52,5 @@ fn get_first_arg() -> Result<OsString, Box<dyn Error>> {
 
 fn amount_to_cents<'de, D: Deserializer<'de>>(deserializer: D) -> Result<i32, D::Error> {
     let amount: f64 = Deserialize::deserialize(deserializer)?;
-    Ok((amount * 100.0) as i32)
+    Ok((amount * 100.0).round() as i32)
 }
