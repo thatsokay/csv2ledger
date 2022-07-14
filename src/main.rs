@@ -9,6 +9,8 @@ use std::process;
 struct Record {
     date: Option<String>,
     description: Option<String>,
+    #[serde(rename = "Notes")]
+    comment: Option<String>,
     #[serde(rename = "Full Account Name")]
     account: String,
     #[serde(rename = "Amount Num")]
@@ -29,6 +31,9 @@ fn run() -> Result<(), Box<dyn Error>> {
         let record: Record = result?;
         if let (Some(date), Some(description)) = (record.date, record.description) {
             println!("\n{} {}", date, description);
+        }
+        if let Some(comment) = record.comment {
+            println!("    ; {}", comment);
         }
         println!("    {}    ${:.2}", record.account, record.amount);
     }
