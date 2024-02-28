@@ -51,7 +51,9 @@ fn convert<R: Read>(mut reader: csv::Reader<R>) -> Result<String, Box<dyn Error>
             write!(&mut ledger, "\n{} {}\n", date, description)?;
         }
         if let Some(comment) = record.comment {
-            write!(&mut ledger, "    ; {}\n", comment)?;
+            for line in comment.split('\n') {
+                write!(&mut ledger, "    ; {}\n", line)?;
+            }
         }
         write!(
             &mut ledger,
@@ -119,6 +121,25 @@ Date,Transaction ID,Number,Description,Notes,Commodity/Currency,Void Reason,Acti
 
             2000-01-01 Shop
                 ; Comment
+                Expenses:Groceries    $10.00
+                Assets:Wallet    $-10.00
+            "###);
+        }
+
+        #[test]
+        fn transaction_with_multi_line_comment() {
+            let data = "\
+Date,Transaction ID,Number,Description,Notes,Commodity/Currency,Void Reason,Action,Memo,Full Account Name,Account Name,Amount With Sym.,Amount Num,Reconcile,Reconcile Date,Rate/Price
+2000-01-01,00000000000000000000000000000000,,Shop,\"Comment 1\nComment 2\",CURRENCY::AUD,,,,Expenses:Groceries,Groceries,$10.00,10.00,n,,1.00
+,,,,,,,,,Assets:Wallet,Wallet,-$10.00,-10.00,n,,1.00
+";
+            let reader = csv::Reader::from_reader(data.as_bytes());
+            let result = convert(reader).unwrap();
+            insta::assert_snapshot!(result, @r###"
+
+            2000-01-01 Shop
+                ; Comment 1
+                ; Comment 2
                 Expenses:Groceries    $10.00
                 Assets:Wallet    $-10.00
             "###);
