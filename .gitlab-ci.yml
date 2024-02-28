@@ -1,0 +1,19 @@
+stages:
+  - test
+  - build
+
+default:
+  image: rust:1.76
+
+test:
+  stage: test
+  script:
+    - cargo test --verbose
+
+compile:
+  stage: build
+  script:
+    - cargo build --release --verbose
+  artifacts:
+    paths:
+      - target/release/csv2ledger
