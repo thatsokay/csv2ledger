@@ -1,6 +1,6 @@
 stages:
   - test
-  - build
+  - deploy
 
 default:
   image: rust:1.76
@@ -11,9 +11,12 @@ test:
     - cargo test --verbose
 
 compile:
-  stage: build
+  stage: deploy
   script:
     - cargo build --release --verbose
+    - mkdir artifacts
+    - cp target/release/csv2ledger .
   artifacts:
+    name: $CI_PROJECT_NAME
     paths:
-      - target/release/csv2ledger
+      - csv2ledger
